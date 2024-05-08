@@ -5,7 +5,7 @@ This is a sample docker_compose that will build three containers to provide Graf
 Traefik is configured to use a cloudflare API key to validate the Let's Encrypt DNS challenge.
 
 
-# Assumptions
+# Assumptions 
 - Registered domain managed via Cloudflare
 - Appropriate Cloudflare API Tokens
 	- https://dash.cloudflare.com/profile/api-tokens
@@ -23,6 +23,9 @@ Traefik is configured to use a cloudflare API key to validate the Let's Encrypt 
 	- PROMIP=_\<ip from skyline subnet\>_
 	- GRAFANAIP=_\<ip from skyline subnet\>_
 
+# Additional Documentation
+- [Traefik Let's Encrypt Documentation](https://doc.traefik.io/traefik/https/acme/)
+- 
 # To-Do
 
 - Include the Grafana Dashboards 
