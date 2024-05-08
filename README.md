@@ -25,7 +25,7 @@ Traefik is configured to use a cloudflare API key to validate the Let's Encrypt 
 
 # Additional Documentation
 - [Traefik Let's Encrypt Documentation](https://doc.traefik.io/traefik/https/acme/)
-- 
+
 # To-Do
 
 - Include the Grafana Dashboards 
