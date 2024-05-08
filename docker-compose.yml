@@ -31,9 +31,6 @@ services:
       CF_DNS_API_TOKEN: $CF_DNS_API_TOKEN
       CF_ZONE_API_TOKEN: $CF_ZONE_API_TOKEN
       CF_API_EMAIL: $CF_API_EMAIL
-    dns:
-      - $DNS1
-      - $DNS2
     networks:
       skyline:
         ipv4_address: $TRAEFIKIP
