@@ -1,0 +1,101 @@
+services:
+ ## Inbound Web Server
+  traefik:
+    container_name: traefik-skyline
+    image: traefik:latest
+    restart: unless-stopped
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker
+      - --log.level=INFO
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.email=$CF_API_EMAIL
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+    expose:
+      - 80
+      - 443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik:/letsencrypt
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)
+      - traefik.http.routers.http-catchall.entrypoints=web
+      - traefik.http.routers.http-catchall.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+    environment:
+      CF_DNS_API_TOKEN: $CF_DNS_API_TOKEN
+      CF_ZONE_API_TOKEN: $CF_ZONE_API_TOKEN
+      CF_API_EMAIL: $CF_API_EMAIL
+    dns:
+      - $DNS1
+      - $DNS2
+    networks:
+      skyline:
+        ipv4_address: $TRAEFIKIP
+
+  prometheus:
+    container_name:  prometheus
+    image: prom/prometheus
+    restart: unless-stopped
+    command:
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-remote-write-receiver
+      - --web.enable-admin-api
+      - --config.file=/etc/prometheus/prometheus.yml
+    depends_on: 
+      - traefik
+    volumes:
+      - prometheus-data:/prometheus
+      - prometheus-config:/etc/prometheus
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - traefik.http.routers.prometheus.tls=true
+      - traefik.http.routers.prometheus.rule=Host(`metrics.YOURDOMAINHERE.COM`)
+      - traefik.http.routers.prometheus.entrypoints=websecure
+      - traefik.http.routers.prometheus.tls.certresolver=letsencrypt
+      - traefik.http.services.prometheus.loadbalancer.server.port=9090
+
+    networks:
+      skyline: 
+        ipv4_address: $PROMIP
+        
+  grafana:
+    container_name:  grafana
+    image: grafana/grafana-oss
+    restart: unless-stopped
+    depends_on: 
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    networks:
+      skyline: 
+        ipv4_address: $GRAFANAIP
+    labels:
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.rule=Host(`grafana.YOURDOMAINHERE.COM`)
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+    
+networks:
+  skyline:
+    ipam:
+      config:
+         - subnet: 172.20.100.0/23
+           ip_range: 172.20.101.0/24
+           gateway: 172.20.101.254
+
+volumes:
+  traefik-data:
+  prometheus-data:
+  prometheus-config:
+  grafana-data:
